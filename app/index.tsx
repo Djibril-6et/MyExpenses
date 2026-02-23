@@ -102,7 +102,7 @@ export default function ExpensesScreen() {
       Alert.alert('Erreur', 'Veuillez renseigner le montant de la dépense');
       return;
     }
-    const expenseAmount = parseFloat(amount);
+    const expenseAmount = parseFloat(amount.replace(',', '.'));
     if (isNaN(expenseAmount) || expenseAmount <= 0) {
       Alert.alert('Erreur', 'Veuillez entrer un montant valide');
       return;
@@ -175,7 +175,7 @@ export default function ExpensesScreen() {
       Alert.alert('Erreur', 'Veuillez renseigner le montant de la dépense');
       return;
     }
-    const newAmount = parseFloat(editAmount);
+    const newAmount = parseFloat(editAmount.replace(',', '.'));
     if (isNaN(newAmount) || newAmount <= 0) {
       Alert.alert('Erreur', 'Veuillez entrer un montant valide');
       return;
@@ -248,7 +248,7 @@ export default function ExpensesScreen() {
       Alert.alert('Erreur', 'Veuillez renseigner le montant de la dépense');
       return;
     }
-    const recurringAmount = parseFloat(amount);
+    const recurringAmount = parseFloat(amount.replace(',', '.'));
     if (isNaN(recurringAmount) || recurringAmount <= 0) {
       Alert.alert('Erreur', 'Veuillez entrer un montant valide');
       return;
@@ -339,7 +339,7 @@ export default function ExpensesScreen() {
       Alert.alert('Erreur', 'Veuillez renseigner le montant');
       return;
     }
-    const addedAmount = parseFloat(remainingInput);
+    const addedAmount = parseFloat(remainingInput.replace(',', '.'));
     if (isNaN(addedAmount)) {
       Alert.alert('Erreur', 'Veuillez entrer un montant valide');
       return;
