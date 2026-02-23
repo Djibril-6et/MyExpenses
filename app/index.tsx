@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as SecureStore from 'expo-secure-store';
 import { Ionicons } from '@expo/vector-icons';
+import { Swipeable } from 'react-native-gesture-handler';
 import WalletIcon from '@/components/WalletIcon';
 
 const colors = {
@@ -297,38 +298,62 @@ export default function ExpensesScreen() {
   const renderRecurringItem = ({ item }: { item: any }) => {
     const isPaid = isRecurringPaid(item.paidMonths);
     return (
-      <View style={[styles.item, isPaid ? styles.recurringPaid : styles.recurringItem]}>
-        <TouchableOpacity onPress={() => toggleRecurringPaid(item.id)} style={styles.checkbox}>
-          <View style={[styles.checkboxInner, isPaid && styles.checkboxChecked]}>
-            {isPaid && <Ionicons name="checkmark" size={14} color="#fff" />}
+      <Swipeable
+        friction={1}
+        rightThreshold={60}
+        overshootRight={false}
+        renderRightActions={() => (
+          <View style={styles.swipeDelete}>
+            <Ionicons name="trash" size={24} color="#fff" />
           </View>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => handleExpensePress(item)} style={styles.itemContentClickable}>
-          <View style={styles.itemContent}>
-            <Text style={styles.description}>{item.description}</Text>
-            <View style={styles.recurringBadge}>
-              <Ionicons name="refresh-outline" size={10} color={colors.accent} />
-              <Text style={styles.recurringLabel}>Récurrent</Text>
+        )}
+        onSwipeableWillOpen={() => deleteRecurringExpense(item.id)}
+      >
+        <View style={[styles.item, isPaid ? styles.recurringPaid : styles.recurringItem]}>
+          <TouchableOpacity onPress={() => toggleRecurringPaid(item.id)} style={styles.checkbox}>
+            <View style={[styles.checkboxInner, isPaid && styles.checkboxChecked]}>
+              {isPaid && <Ionicons name="checkmark" size={14} color="#fff" />}
             </View>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => handleExpensePress(item)} style={styles.itemContentClickable}>
+            <View style={styles.itemContent}>
+              <Text style={styles.description}>{item.description}</Text>
+              <View style={styles.recurringBadge}>
+                <Ionicons name="refresh-outline" size={10} color={colors.accent} />
+                <Text style={styles.recurringLabel}>Récurrent</Text>
+              </View>
+            </View>
+          </TouchableOpacity>
+          <View style={styles.itemRight}>
+            <Text style={[styles.amount, isPaid && styles.amountPaid]}>{item.amount.toFixed(2)}€</Text>
           </View>
-        </TouchableOpacity>
-        <View style={styles.itemRight}>
-          <Text style={[styles.amount, isPaid && styles.amountPaid]}>{item.amount.toFixed(2)}€</Text>
         </View>
-      </View>
+      </Swipeable>
     );
   };
 
   const renderItem = ({ item }: { item: any }) => (
-    <TouchableOpacity onPress={() => handleExpensePress(item)} style={styles.item}>
-      <View style={styles.itemContent}>
-        <Text style={styles.description}>{item.description}</Text>
-        <Text style={styles.date}>{item.date}</Text>
-      </View>
-      <View style={styles.itemRight}>
-        <Text style={styles.amount}>-{item.amount.toFixed(2)}€</Text>
-      </View>
-    </TouchableOpacity>
+    <Swipeable
+      friction={1}
+      rightThreshold={60}
+      overshootRight={false}
+      renderRightActions={() => (
+        <View style={styles.swipeDelete}>
+          <Ionicons name="trash" size={24} color="#fff" />
+        </View>
+      )}
+      onSwipeableWillOpen={() => deleteExpense(item.id)}
+    >
+      <TouchableOpacity onPress={() => handleExpensePress(item)} style={styles.item}>
+        <View style={styles.itemContent}>
+          <Text style={styles.description}>{item.description}</Text>
+          <Text style={styles.date}>{item.date}</Text>
+        </View>
+        <View style={styles.itemRight}>
+          <Text style={styles.amount}>-{item.amount.toFixed(2)}€</Text>
+        </View>
+      </TouchableOpacity>
+    </Swipeable>
   );
 
   return (
@@ -904,5 +929,12 @@ const styles = StyleSheet.create({
   walletIcon: {
     opacity: 0.12,
     transform: [{ rotate: '15deg' }],
+  },
+  swipeDelete: {
+    backgroundColor: colors.danger,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 80,
+    height: '100%',
   },
 });
