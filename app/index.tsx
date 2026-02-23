@@ -81,7 +81,10 @@ export default function ExpensesScreen() {
   const loadRemaining = async () => {
     try {
       const stored = await SecureStore.getItemAsync('remaining');
-      if (stored) setRemaining(parseFloat(stored));
+      if (stored) {
+        const parsed = parseFloat(stored);
+        setRemaining(isNaN(parsed) ? 0 : parsed);
+      }
     } catch (e) { console.error('Error loading remaining', e); }
   };
 
@@ -91,8 +94,19 @@ export default function ExpensesScreen() {
   };
 
   const addExpense = () => {
-    if (!description.trim() || !amount.trim()) return;
+    if (!description.trim()) {
+      Alert.alert('Erreur', 'Veuillez nommer la dépense');
+      return;
+    }
+    if (!amount.trim()) {
+      Alert.alert('Erreur', 'Veuillez renseigner le montant de la dépense');
+      return;
+    }
     const expenseAmount = parseFloat(amount);
+    if (isNaN(expenseAmount) || expenseAmount <= 0) {
+      Alert.alert('Erreur', 'Veuillez entrer un montant valide');
+      return;
+    }
     const newExpense = {
       id: Date.now(),
       description: description.trim(),
@@ -102,8 +116,11 @@ export default function ExpensesScreen() {
     const updated = [newExpense, ...expenses];
     setExpenses(updated);
     saveExpenses(updated);
-    setRemaining(prev => prev - expenseAmount);
-    saveRemaining(remaining - expenseAmount);
+    setRemaining(prev => {
+      const newRemaining = prev - expenseAmount;
+      saveRemaining(newRemaining);
+      return newRemaining;
+    });
     setDescription('');
     setAmount('');
     Keyboard.dismiss();
@@ -115,8 +132,11 @@ export default function ExpensesScreen() {
     setExpenses(updated);
     saveExpenses(updated);
     if (expenseToDelete) {
-      setRemaining(prev => prev + expenseToDelete.amount);
-      saveRemaining(remaining + expenseToDelete.amount);
+      setRemaining(prev => {
+        const newRemaining = prev + expenseToDelete.amount;
+        saveRemaining(newRemaining);
+        return newRemaining;
+      });
     }
   };
 
@@ -147,21 +167,35 @@ export default function ExpensesScreen() {
   };
 
   const saveEdit = () => {
-    if (!editDescription.trim() || !editAmount.trim()) return;
-    
+    if (!editDescription.trim()) {
+      Alert.alert('Erreur', 'Veuillez nommer la dépense');
+      return;
+    }
+    if (!editAmount.trim()) {
+      Alert.alert('Erreur', 'Veuillez renseigner le montant de la dépense');
+      return;
+    }
+    const newAmount = parseFloat(editAmount);
+    if (isNaN(newAmount) || newAmount <= 0) {
+      Alert.alert('Erreur', 'Veuillez entrer un montant valide');
+      return;
+    }
+
     if (editingExpense.paidMonths) {
       const updated = recurringExpenses.map((re: any) => {
         if (re.id === editingExpense.id) {
           const oldAmount = re.amount;
-          const newAmount = parseFloat(editAmount);
           const amountDiff = newAmount - oldAmount;
           const isPaid = re.paidMonths.includes(getCurrentMonth());
-          
+
           if (isPaid && amountDiff !== 0) {
-            setRemaining(prev => prev - amountDiff);
-            saveRemaining(remaining - amountDiff);
+            setRemaining(prev => {
+              const newRemaining = prev - amountDiff;
+              saveRemaining(newRemaining);
+              return newRemaining;
+            });
           }
-          
+
           return {
             ...re,
             description: editDescription.trim(),
@@ -176,14 +210,16 @@ export default function ExpensesScreen() {
       const updated = expenses.map((e: any) => {
         if (e.id === editingExpense.id) {
           const oldAmount = e.amount;
-          const newAmount = parseFloat(editAmount);
           const amountDiff = newAmount - oldAmount;
-          
+
           if (amountDiff !== 0) {
-            setRemaining(prev => prev - amountDiff);
-            saveRemaining(remaining - amountDiff);
+            setRemaining(prev => {
+              const newRemaining = prev - amountDiff;
+              saveRemaining(newRemaining);
+              return newRemaining;
+            });
           }
-          
+
           return {
             ...e,
             description: editDescription.trim(),
@@ -204,11 +240,23 @@ export default function ExpensesScreen() {
   };
 
   const addRecurringExpense = () => {
-    if (!description.trim() || !amount.trim()) return;
+    if (!description.trim()) {
+      Alert.alert('Erreur', 'Veuillez nommer la dépense');
+      return;
+    }
+    if (!amount.trim()) {
+      Alert.alert('Erreur', 'Veuillez renseigner le montant de la dépense');
+      return;
+    }
+    const recurringAmount = parseFloat(amount);
+    if (isNaN(recurringAmount) || recurringAmount <= 0) {
+      Alert.alert('Erreur', 'Veuillez entrer un montant valide');
+      return;
+    }
     const newRecurring = {
       id: Date.now(),
       description: description.trim(),
-      amount: parseFloat(amount),
+      amount: recurringAmount,
       paidMonths: [],
     };
     const updated = [...recurringExpenses, newRecurring];
@@ -228,15 +276,21 @@ export default function ExpensesScreen() {
         const paidMonths = isPaid
           ? re.paidMonths.filter((m: string) => m !== currentMonth)
           : [...re.paidMonths, currentMonth];
-        
+
         if (isPaid) {
-          setRemaining(prev => prev + re.amount);
-          saveRemaining(remaining + re.amount);
+          setRemaining(prev => {
+            const newRemaining = prev + re.amount;
+            saveRemaining(newRemaining);
+            return newRemaining;
+          });
         } else {
-          setRemaining(prev => prev - re.amount);
-          saveRemaining(remaining - re.amount);
+          setRemaining(prev => {
+            const newRemaining = prev - re.amount;
+            saveRemaining(newRemaining);
+            return newRemaining;
+          });
         }
-        
+
         return { ...re, paidMonths };
       }
       return re;
@@ -251,10 +305,13 @@ export default function ExpensesScreen() {
     const updated = recurringExpenses.filter((re: any) => re.id !== id);
     setRecurringExpenses(updated);
     saveRecurringExpenses(updated);
-    
+
     if (expenseToDelete && expenseToDelete.paidMonths.includes(currentMonth)) {
-      setRemaining(prev => prev + expenseToDelete.amount);
-      saveRemaining(remaining + expenseToDelete.amount);
+      setRemaining(prev => {
+        const newRemaining = prev + expenseToDelete.amount;
+        saveRemaining(newRemaining);
+        return newRemaining;
+      });
     }
   };
 
@@ -278,8 +335,15 @@ export default function ExpensesScreen() {
   };
 
   const updateRemaining = () => {
-    if (!remainingInput.trim()) return;
+    if (!remainingInput.trim()) {
+      Alert.alert('Erreur', 'Veuillez renseigner le montant');
+      return;
+    }
     const addedAmount = parseFloat(remainingInput);
+    if (isNaN(addedAmount)) {
+      Alert.alert('Erreur', 'Veuillez entrer un montant valide');
+      return;
+    }
     const newRemaining = remaining + addedAmount;
     setRemaining(newRemaining);
     saveRemaining(newRemaining);
