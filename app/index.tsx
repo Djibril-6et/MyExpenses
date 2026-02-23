@@ -703,7 +703,7 @@ const styles = StyleSheet.create({
   },
   amountInput: {
     flex: 0,
-    width: 70,
+    width: 100,
     textAlign: 'center',
   },
   iconBtn: {
@@ -987,7 +987,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: -30,
     bottom: 50,
-    alignItems: 'flex-start',
+    alignItems: 'center',
     justifyContent: 'flex-end',
   },
   walletIcon: {
