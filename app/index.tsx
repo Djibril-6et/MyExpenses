@@ -3,7 +3,7 @@ import { useLanguage } from "@/context/LanguageContext";
 import { useTheme } from "@/context/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import * as SecureStore from "expo-secure-store";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Alert,
   Keyboard,
@@ -33,6 +33,7 @@ export default function ExpensesScreen() {
   const [editingExpense, setEditingExpense] = useState<any>(null);
   const [editDescription, setEditDescription] = useState("");
   const [editAmount, setEditAmount] = useState("");
+  const swipeableRefs = useRef<{ [key: number]: any }>({});
 
   const getCurrentMonth = () => {
     const now = new Date();
@@ -761,7 +762,10 @@ export default function ExpensesScreen() {
     const isPaid = isRecurringPaid(item.paidMonths);
     return (
       <Swipeable
-        friction={1}
+        ref={(ref) => {
+          if (ref) swipeableRefs.current[`recurring-${item.id}`] = ref;
+        }}
+        friction={3}
         rightThreshold={60}
         overshootRight={false}
         renderRightActions={() => (
@@ -769,7 +773,24 @@ export default function ExpensesScreen() {
             <Ionicons name="trash" size={24} color="#fff" />
           </View>
         )}
-        onSwipeableWillOpen={() => deleteRecurringExpense(item.id)}
+        onSwipeableWillOpen={() => {
+          swipeableRefs.current[`recurring-${item.id}`]?.close();
+          setTimeout(() => {
+            Alert.alert(
+              t.confirmDelete,
+              t.confirmDeleteMessage,
+              [
+                { text: t.cancel, style: "cancel" },
+                { 
+                  text: t.delete, 
+                  style: "destructive", 
+                  onPress: () => deleteRecurringExpense(item.id) 
+                },
+              ],
+              { cancelable: true }
+            );
+          }, 150);
+        }}
       >
         <View
           style={[
@@ -815,6 +836,9 @@ export default function ExpensesScreen() {
 
   const renderItem = ({ item }: { item: any }) => (
     <Swipeable
+      ref={(ref) => {
+        if (ref) swipeableRefs.current[`expense-${item.id}`] = ref;
+      }}
       friction={1}
       rightThreshold={60}
       overshootRight={false}
@@ -823,7 +847,24 @@ export default function ExpensesScreen() {
           <Ionicons name="trash" size={24} color="#fff" />
         </View>
       )}
-      onSwipeableWillOpen={() => deleteExpense(item.id)}
+      onSwipeableWillOpen={() => {
+        swipeableRefs.current[`expense-${item.id}`]?.close();
+        setTimeout(() => {
+          Alert.alert(
+            t.confirmDelete,
+            t.confirmDeleteMessage,
+            [
+              { text: t.cancel, style: "cancel" },
+              { 
+                text: t.delete, 
+                style: "destructive", 
+                onPress: () => deleteExpense(item.id) 
+              },
+            ],
+            { cancelable: true }
+          );
+        }, 150);
+      }}
     >
       <TouchableOpacity
         onPress={() => handleExpensePress(item)}

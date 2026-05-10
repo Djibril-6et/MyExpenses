@@ -34,6 +34,9 @@ type Translations = {
   chooseTheme: string;
   chooseLanguage: string;
   deleteAll: string;
+  confirmDelete: string;
+  confirmDeleteMessage: string;
+  delete: string;
 };
 
 const translations: Record<Language, Translations> = {
@@ -68,6 +71,9 @@ const translations: Record<Language, Translations> = {
     chooseTheme: "Choisir le thème",
     chooseLanguage: "Choisir la langue",
     deleteAll: "Tout supprimer",
+    confirmDelete: "Confirmer la suppression",
+    confirmDeleteMessage: "Voulez-vous vraiment supprimer cette dépense ?",
+    delete: "Supprimer",
   },
   en: {
     expenses: "Expenses",
@@ -100,6 +106,9 @@ const translations: Record<Language, Translations> = {
     chooseTheme: "Choose theme",
     chooseLanguage: "Choose language",
     deleteAll: "Delete all",
+    confirmDelete: "Confirm deletion",
+    confirmDeleteMessage: "Are you sure you want to delete this expense?",
+    delete: "Delete",
   },
 };
 
