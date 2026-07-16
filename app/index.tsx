@@ -2,13 +2,12 @@ import MoneyBagIcon from "@/components/MoneyBagIcon";
 import { useLanguage } from "@/context/LanguageContext";
 import { useTheme } from "@/context/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
-import * as SecureStore from "expo-secure-store";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { useEffect, useRef, useState } from "react";
 import {
   Alert,
   Keyboard,
   Modal,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -28,11 +27,15 @@ export default function ExpensesScreen() {
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
   const [showAddRecurring, setShowAddRecurring] = useState(false);
+  const [recurringDay, setRecurringDay] = useState(String(new Date().getDate()));
   const [showRemainingInput, setShowRemainingInput] = useState(false);
   const [remainingInput, setRemainingInput] = useState("");
   const [editingExpense, setEditingExpense] = useState<any>(null);
   const [editDescription, setEditDescription] = useState("");
   const [editAmount, setEditAmount] = useState("");
+  const [editDay, setEditDay] = useState("");
+  const [showDayGridAdd, setShowDayGridAdd] = useState(false);
+  const [showDayGridEdit, setShowDayGridEdit] = useState(false);
   const swipeableRefs = useRef<{ [key: number]: any }>({});
 
   const getCurrentMonth = () => {
@@ -41,16 +44,14 @@ export default function ExpensesScreen() {
   };
 
   useEffect(() => {
-    if (Platform.OS !== "web") {
-      loadExpenses();
-      loadRecurringExpenses();
-      loadRemaining();
-    }
+    loadExpenses();
+    loadRecurringExpenses();
+    loadRemaining();
   }, []);
 
   const loadExpenses = async () => {
     try {
-      const stored = await SecureStore.getItemAsync("expenses");
+      const stored = await AsyncStorage.getItem("expenses");
       if (stored) setExpenses(JSON.parse(stored));
     } catch (e) {
       console.error("Error loading expenses", e);
@@ -59,7 +60,7 @@ export default function ExpensesScreen() {
 
   const loadRecurringExpenses = async () => {
     try {
-      const stored = await SecureStore.getItemAsync("recurringExpenses");
+      const stored = await AsyncStorage.getItem("recurringExpenses");
       if (stored) setRecurringExpenses(JSON.parse(stored));
     } catch (e) {
       console.error("Error loading recurring expenses", e);
@@ -68,7 +69,7 @@ export default function ExpensesScreen() {
 
   const loadRemaining = async () => {
     try {
-      const stored = await SecureStore.getItemAsync("remaining");
+      const stored = await AsyncStorage.getItem("remaining");
       if (stored) {
         const parsed = parseFloat(stored);
         setRemaining(isNaN(parsed) ? 0 : parsed);
@@ -80,7 +81,7 @@ export default function ExpensesScreen() {
 
   const saveExpenses = async (newExpenses: any[]) => {
     try {
-      await SecureStore.setItemAsync("expenses", JSON.stringify(newExpenses));
+      await AsyncStorage.setItem("expenses", JSON.stringify(newExpenses));
     } catch (e) {
       console.error("Error saving expenses", e);
     }
@@ -158,12 +159,15 @@ export default function ExpensesScreen() {
     setEditingExpense(item);
     setEditDescription(item.description);
     setEditAmount(item.amount.toString());
+    setEditDay(item.day ? String(item.day) : "");
   };
 
   const closeEditModal = () => {
     setEditingExpense(null);
     setEditDescription("");
     setEditAmount("");
+    setEditDay("");
+    setShowDayGridEdit(false);
   };
 
   const saveEdit = () => {
@@ -182,6 +186,11 @@ export default function ExpensesScreen() {
     }
 
     if (editingExpense.paidMonths) {
+      const newDay = parseInt(editDay);
+      if (isNaN(newDay) || newDay < 1 || newDay > 31) {
+        Alert.alert("Erreur", t.errorAmountValid);
+        return;
+      }
       const updated = recurringExpenses.map((re: any) => {
         if (re.id === editingExpense.id) {
           const oldAmount = re.amount;
@@ -200,6 +209,7 @@ export default function ExpensesScreen() {
             ...re,
             description: editDescription.trim(),
             amount: newAmount,
+            day: newDay,
           };
         }
         return re;
@@ -236,7 +246,7 @@ export default function ExpensesScreen() {
 
   const saveRecurringExpenses = async (newRecurring: any[]) => {
     try {
-      await SecureStore.setItemAsync(
+      await AsyncStorage.setItem(
         "recurringExpenses",
         JSON.stringify(newRecurring),
       );
@@ -259,10 +269,16 @@ export default function ExpensesScreen() {
       Alert.alert("Erreur", t.errorAmountValid);
       return;
     }
+    const day = parseInt(recurringDay);
+    if (isNaN(day) || day < 1 || day > 31) {
+      Alert.alert("Erreur", t.errorAmountValid);
+      return;
+    }
     const newRecurring = {
       id: Date.now(),
       description: description.trim(),
       amount: recurringAmount,
+      day: day,
       paidMonths: [],
     };
     const updated = [...recurringExpenses, newRecurring];
@@ -270,6 +286,7 @@ export default function ExpensesScreen() {
     saveRecurringExpenses(updated);
     setDescription("");
     setAmount("");
+    setRecurringDay(String(new Date().getDate()));
     setShowAddRecurring(false);
     Keyboard.dismiss();
   };
@@ -332,7 +349,7 @@ export default function ExpensesScreen() {
 
   const saveRemaining = async (newRemaining: number) => {
     try {
-      await SecureStore.setItemAsync("remaining", newRemaining.toString());
+      await AsyncStorage.setItem("remaining", newRemaining.toString());
     } catch (e) {
       console.error("Error saving remaining", e);
     }
@@ -368,6 +385,19 @@ export default function ExpensesScreen() {
 
   const isRecurringPaid = (paidMonths: string[]) =>
     paidMonths.includes(getCurrentMonth());
+
+  const getDaysUntil = (day: number) => {
+    const now = new Date();
+    let target = new Date(now.getFullYear(), now.getMonth(), day);
+    if (target.getTime() < now.setHours(0, 0, 0, 0)) {
+      target = new Date(now.getFullYear(), now.getMonth() + 1, day);
+    }
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return Math.round(
+      (target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
+    );
+  };
 
   const total = expenses.reduce((sum, e) => sum + e.amount, 0);
   const unpaidRecurringTotal = recurringExpenses
@@ -754,6 +784,58 @@ export default function ExpensesScreen() {
         width: 80,
         height: "100%",
       },
+      dayPickerBtn: {
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 2,
+        paddingVertical: 10,
+      },
+      dayPickerBtnText: {
+        fontSize: 14,
+        fontWeight: "600",
+        color: colors.accent,
+      },
+      dayGrid: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        justifyContent: "space-between",
+        paddingHorizontal: 16,
+        paddingVertical: 20,
+      },
+      dayGridInline: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        paddingHorizontal: 12,
+        paddingVertical: 12,
+        gap: 6,
+        backgroundColor: colors.card,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border,
+      },
+      dayCell: {
+        width: "13%",
+        aspectRatio: 1,
+        borderRadius: 10,
+        justifyContent: "center",
+        alignItems: "center",
+        marginBottom: 8,
+        backgroundColor: colors.inputBg,
+      },
+      dayCellSelected: {
+        backgroundColor: colors.accent,
+      },
+      dayCellText: {
+        fontSize: 15,
+        fontWeight: "600",
+        color: colors.text,
+      },
+      dayCellTextSelected: {
+        color: "#fff",
+      },
+      dayCellToday: {
+        borderWidth: 1.5,
+        borderColor: colors.accent,
+      },
     });
 
   const styles = getStyles();
@@ -821,6 +903,26 @@ export default function ExpensesScreen() {
                   color={colors.accent}
                 />
                 <Text style={styles.recurringLabel}>{t.recurring}</Text>
+                {item.day && (
+                  <>
+                    <Ionicons
+                      name="calendar-outline"
+                      size={10}
+                      color={colors.textSecondary}
+                      style={{ marginLeft: 6 }}
+                    />
+                    <Text style={[styles.date, { marginTop: 0 }]}>
+                      {isPaid
+                        ? t.charged
+                        : (() => {
+                            const days = getDaysUntil(item.day);
+                            if (days <= 0) return `${t.chargedOn} ${item.day} (${t.today})`;
+                            if (days === 1) return `${t.chargedOn} ${item.day} (${t.inOneDay})`;
+                            return `${t.chargedOn} ${item.day} (dans ${days} ${t.inDays})`;
+                          })()}
+                    </Text>
+                  </>
+                )}
               </View>
             </View>
           </TouchableOpacity>
@@ -977,6 +1079,13 @@ export default function ExpensesScreen() {
         {showAddRecurring ? (
           <>
             <TouchableOpacity
+              onPress={() => setShowDayGridAdd((v) => !v)}
+              style={[styles.dayPickerBtn, { width: 60 }]}
+            >
+              <Ionicons name="calendar-outline" size={16} color={colors.accent} />
+              <Text style={styles.dayPickerBtnText}>{recurringDay}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
               onPress={addRecurringExpense}
               style={[styles.iconBtn, { backgroundColor: colors.accent }]}
             >
@@ -1010,6 +1119,38 @@ export default function ExpensesScreen() {
           </>
         )}
       </View>
+
+      {showDayGridAdd && (
+        <View style={styles.dayGridInline}>
+          {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => {
+            const isSelected = parseInt(recurringDay) === d;
+            const isToday = new Date().getDate() === d;
+            return (
+              <TouchableOpacity
+                key={d}
+                onPress={() => {
+                  setRecurringDay(String(d));
+                  setShowDayGridAdd(false);
+                }}
+                style={[
+                  styles.dayCell,
+                  isSelected && styles.dayCellSelected,
+                  isToday && !isSelected && styles.dayCellToday,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.dayCellText,
+                    isSelected && styles.dayCellTextSelected,
+                  ]}
+                >
+                  {d}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      )}
 
       <ScrollView style={styles.list} showsVerticalScrollIndicator={false}>
         <View style={styles.sectionCard}>
@@ -1121,6 +1262,54 @@ export default function ExpensesScreen() {
                 placeholderTextColor={colors.textSecondary}
                 keyboardType="numeric"
               />
+
+              {editingExpense?.paidMonths && (
+                <>
+                  <Text style={styles.modalLabel}>{t.dayLabel}</Text>
+                  <TouchableOpacity
+                    onPress={() => setShowDayGridEdit((v) => !v)}
+                    style={styles.modalInput}
+                  >
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                      <Ionicons name="calendar-outline" size={18} color={colors.textSecondary} />
+                      <Text style={{ fontSize: 16, color: colors.text }}>
+                        {editDay || "—"}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                  {showDayGridEdit && (
+                    <View style={styles.dayGridInline}>
+                      {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => {
+                        const isSelected = parseInt(editDay) === d;
+                        const isToday = new Date().getDate() === d;
+                        return (
+                          <TouchableOpacity
+                            key={d}
+                            onPress={() => {
+                              setEditDay(String(d));
+                              setShowDayGridEdit(false);
+                            }}
+                            style={[
+                              styles.dayCell,
+                              isSelected && styles.dayCellSelected,
+                              isToday && !isSelected && styles.dayCellToday,
+                            ]}
+                          >
+                            <Text
+                              style={[
+                                styles.dayCellText,
+                                isSelected && styles.dayCellTextSelected,
+                              ]}
+                            >
+                              {d}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  )}
+                </>
+              )}
             </View>
 
             <View style={styles.modalFooter}>

@@ -1,4 +1,4 @@
-import * as SecureStore from "expo-secure-store";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { createContext, useContext, useEffect, useState } from "react";
 
 export type Language = "fr" | "en";
@@ -14,6 +14,13 @@ type Translations = {
   unpaid: string;
   recurring: string;
   recurringExpenses: string;
+  dueDay: string;
+  chargedOn: string;
+  dayLabel: string;
+  charged: string;
+  inDays: string;
+  inOneDay: string;
+  today: string;
   monthlyExpenses: string;
   noRecurringExpenses: string;
   noMonthlyExpenses: string;
@@ -51,6 +58,13 @@ const translations: Record<Language, Translations> = {
     unpaid: "Non payé:",
     recurring: "Récurrent",
     recurringExpenses: "Récurrentes",
+    dueDay: "Jour de prélèvement",
+    chargedOn: "Prélevé le",
+    dayLabel: "Jour de prélèvement",
+    charged: "Prélevé",
+    inDays: "jours",
+    inOneDay: "dans 1 jour",
+    today: "aujourd'hui",
     monthlyExpenses: "Dépenses du mois",
     noRecurringExpenses: "Aucune dépense récurrente",
     noMonthlyExpenses: "Aucune dépense ce mois-ci",
@@ -86,6 +100,13 @@ const translations: Record<Language, Translations> = {
     unpaid: "Unpaid:",
     recurring: "Recurring",
     recurringExpenses: "Recurring",
+    dueDay: "Due day",
+    chargedOn: "Charged on the",
+    dayLabel: "Due day",
+    charged: "Charged",
+    inDays: "days",
+    inOneDay: "in 1 day",
+    today: "today",
     monthlyExpenses: "Monthly expenses",
     noRecurringExpenses: "No recurring expenses",
     noMonthlyExpenses: "No expenses this month",
@@ -129,7 +150,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
   const loadLanguage = async () => {
     try {
-      const stored = await SecureStore.getItemAsync("language");
+      const stored = await AsyncStorage.getItem("language");
       if (stored === "fr" || stored === "en") {
         setLanguageState(stored);
       }
@@ -141,7 +162,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const setLanguage = async (lang: Language) => {
     setLanguageState(lang);
     try {
-      await SecureStore.setItemAsync("language", lang);
+      await AsyncStorage.setItem("language", lang);
     } catch (e) {
       console.error("Error saving language", e);
     }

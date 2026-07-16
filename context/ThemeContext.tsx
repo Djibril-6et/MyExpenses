@@ -1,4 +1,4 @@
-import * as SecureStore from "expo-secure-store";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { ThemeColors, ThemeName, themes } from "@/constants/themes";
 
@@ -19,7 +19,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const loadTheme = async () => {
     try {
-      const stored = await SecureStore.getItemAsync("theme");
+      const stored = await AsyncStorage.getItem("theme");
       if (stored && (stored === "blue" || stored === "pink" || stored === "green")) {
         setThemeName(stored);
       }
@@ -31,7 +31,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const setTheme = async (name: ThemeName) => {
     setThemeName(name);
     try {
-      await SecureStore.setItemAsync("theme", name);
+      await AsyncStorage.setItem("theme", name);
     } catch (e) {
       console.error("Error saving theme", e);
     }

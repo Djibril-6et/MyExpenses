@@ -1,10 +1,9 @@
 import AppleIcon from "@/components/AppleIcon";
-import * as SecureStore from "expo-secure-store";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Alert,
   Keyboard,
-  Platform,
   StyleSheet,
   Text,
   TextInput,
@@ -23,14 +22,12 @@ export default function ShoppingListScreen() {
   const [newItem, setNewItem] = useState("");
 
   useEffect(() => {
-    if (Platform.OS !== "web") {
-      loadItems();
-    }
+    loadItems();
   }, []);
 
   const loadItems = async () => {
     try {
-      const stored = await SecureStore.getItemAsync("shoppingList");
+      const stored = await AsyncStorage.getItem("shoppingList");
       if (stored) setItems(JSON.parse(stored));
     } catch (e) {
       console.error("Error loading shopping list", e);
@@ -39,7 +36,7 @@ export default function ShoppingListScreen() {
 
   const saveItems = async (newItems: any[]) => {
     try {
-      await SecureStore.setItemAsync("shoppingList", JSON.stringify(newItems));
+      await AsyncStorage.setItem("shoppingList", JSON.stringify(newItems));
     } catch (e) {
       console.error("Error saving shopping list", e);
     }
@@ -60,17 +57,21 @@ export default function ShoppingListScreen() {
   };
 
   const toggleItem = (id: number) => {
-    const updated = items.map((item) =>
-      item.id === id ? { ...item, checked: !item.checked } : item,
-    );
-    setItems(updated);
-    saveItems(updated);
+    setItems((prev) => {
+      const updated = prev.map((item) =>
+        item.id === id ? { ...item, checked: !item.checked } : item,
+      );
+      saveItems(updated);
+      return updated;
+    });
   };
 
   const deleteItem = (id: number) => {
-    const updated = items.filter((item) => item.id !== id);
-    setItems(updated);
-    saveItems(updated);
+    setItems((prev) => {
+      const updated = prev.filter((item) => item.id !== id);
+      saveItems(updated);
+      return updated;
+    });
   };
 
   const clearAll = () => {
