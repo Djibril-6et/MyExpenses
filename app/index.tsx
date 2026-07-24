@@ -1,6 +1,8 @@
 import MoneyBagIcon from "@/components/MoneyBagIcon";
 import { useLanguage } from "@/context/LanguageContext";
 import { useTheme } from "@/context/ThemeContext";
+import { useNotification } from "@/context/NotificationContext";
+import { syncNotifications } from "@/services/notifications";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { useEffect, useRef, useState } from "react";
@@ -21,6 +23,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export default function ExpensesScreen() {
   const { theme: colors } = useTheme();
   const { t } = useLanguage();
+  const { enabled: notifEnabled } = useNotification();
   const [expenses, setExpenses] = useState<any[]>([]);
   const [recurringExpenses, setRecurringExpenses] = useState<any[]>([]);
   const [remaining, setRemaining] = useState(0);
@@ -48,6 +51,12 @@ export default function ExpensesScreen() {
     loadRecurringExpenses();
     loadRemaining();
   }, []);
+
+  useEffect(() => {
+    if (notifEnabled) {
+      syncNotifications(recurringExpenses, t.notifTitle, t.notifBody);
+    }
+  }, [notifEnabled, recurringExpenses, t.notifTitle, t.notifBody]);
 
   const loadExpenses = async () => {
     try {

@@ -14,6 +14,7 @@ import "react-native-reanimated";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { ThemeProvider, useTheme } from "@/context/ThemeContext";
 import { LanguageProvider, useLanguage } from "@/context/LanguageContext";
+import { NotificationProvider } from "@/context/NotificationContext";
 import { SettingsModal } from "@/components/SettingsModal";
 
 type SettingsContextType = {
@@ -131,13 +132,15 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider>
         <LanguageProvider>
-          <SettingsProvider>
-            <NavigationThemeProvider
-              value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
-            >
-              <SettingsWrapper />
-            </NavigationThemeProvider>
-          </SettingsProvider>
+          <NotificationProvider>
+            <SettingsProvider>
+              <NavigationThemeProvider
+                value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
+              >
+                <SettingsWrapper />
+              </NavigationThemeProvider>
+            </SettingsProvider>
+          </NotificationProvider>
         </LanguageProvider>
       </ThemeProvider>
     </GestureHandlerRootView>

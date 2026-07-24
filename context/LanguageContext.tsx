@@ -44,6 +44,11 @@ type Translations = {
   confirmDelete: string;
   confirmDeleteMessage: string;
   delete: string;
+  notifications: string;
+  notificationsDesc: string;
+  notificationsDenied: string;
+  notifTitle: string;
+  notifBody: string;
 };
 
 const translations: Record<Language, Translations> = {
@@ -88,6 +93,11 @@ const translations: Record<Language, Translations> = {
     confirmDelete: "Confirmer la suppression",
     confirmDeleteMessage: "Voulez-vous vraiment supprimer cette dépense ?",
     delete: "Supprimer",
+    notifications: "Notifications",
+    notificationsDesc: "Recevoir un rappel la veille d'un prélèvement",
+    notificationsDenied: "Veuillez autoriser les notifications dans les réglages de votre appareil.",
+    notifTitle: "Dépense à venir",
+    notifBody: "💡 {name} ({amount}€) sera prélevé demain",
   },
   en: {
     expenses: "Expenses",
@@ -130,6 +140,11 @@ const translations: Record<Language, Translations> = {
     confirmDelete: "Confirm deletion",
     confirmDeleteMessage: "Are you sure you want to delete this expense?",
     delete: "Delete",
+    notifications: "Notifications",
+    notificationsDesc: "Get a reminder the day before a charge",
+    notificationsDenied: "Please enable notifications in your device settings.",
+    notifTitle: "Upcoming expense",
+    notifBody: "💡 {name} ({amount}€) will be charged tomorrow",
   },
 };
 

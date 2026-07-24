@@ -1,14 +1,18 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import {
+  Alert,
   Modal,
   StyleSheet,
+  Switch,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
 import { useTheme } from "@/context/ThemeContext";
 import { useLanguage } from "@/context/LanguageContext";
+import { useNotification } from "@/context/NotificationContext";
+import { requestNotificationPermissions } from "@/services/notifications";
 import { themeNames, themes } from "@/constants/themes";
 
 export function SettingsModal({
@@ -20,6 +24,20 @@ export function SettingsModal({
 }) {
   const { theme: colors, themeName, setTheme } = useTheme();
   const { language, setLanguage, t } = useLanguage();
+  const { enabled: notifEnabled, enable, disable } = useNotification();
+
+  const toggleNotifications = async () => {
+    if (!notifEnabled) {
+      const granted = await requestNotificationPermissions();
+      if (!granted) {
+        Alert.alert(t.notificationsDenied);
+        return;
+      }
+      await enable();
+    } else {
+      await disable();
+    }
+  };
 
   const styles = StyleSheet.create({
     modalOverlay: {
@@ -93,6 +111,30 @@ export function SettingsModal({
     },
     themeOptionCheck: {
       marginLeft: "auto",
+    },
+    notifRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      padding: 16,
+      borderRadius: 12,
+      borderWidth: 2,
+      borderColor: colors.border,
+      backgroundColor: colors.inputBg,
+    },
+    notifTextContainer: {
+      flex: 1,
+      marginRight: 12,
+    },
+    notifTitle: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: colors.text,
+    },
+    notifDesc: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      marginTop: 4,
     },
   });
 
@@ -191,6 +233,22 @@ export function SettingsModal({
                 </View>
               )}
             </TouchableOpacity>
+
+            <Text style={[styles.sectionLabel, { marginTop: 20 }]}>
+              {t.notifications}
+            </Text>
+            <View style={styles.notifRow}>
+              <View style={styles.notifTextContainer}>
+                <Text style={styles.notifTitle}>{t.notifications}</Text>
+                <Text style={styles.notifDesc}>{t.notificationsDesc}</Text>
+              </View>
+              <Switch
+                value={notifEnabled}
+                onValueChange={toggleNotifications}
+                trackColor={{ false: colors.border, true: colors.accent }}
+                thumbColor="#fff"
+              />
+            </View>
           </View>
         </TouchableOpacity>
       </TouchableOpacity>
